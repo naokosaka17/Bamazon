@@ -1,68 +1,56 @@
+// npm install mysql and prompt
 var mysql = require('mysql');
-var inquirer = require('inquirer');
+var prompt = require('prompt');
 
-
+// create a connection with mySQL
 var connection = mysql.createConnection({
-  host     : 'localhost',
-  port     : 3306,
-  user     : 'root',
-  password : '',
-  database : 'Bamazon'
+    host: "localhost",
+    port: 3306,
+    user: "root", //Your username
+    password: "", //Your password
+    database: "bamazon"
 });
- 
+
+// connect to mySQL.
+// connection is an object
 connection.connect();
 
+connection.query('SELECT itemID, productName, price FROM products',function(err,rows){
+  if(err) throw err;
+
+  console.log("\nitemID\t\tproductName\t\tprice");
+  for(var i = 0; i < rows.length; i++) {
+    console.log(rows[i].itemID + '\t\t' + rows[i].productName + '\t\t$' + rows[i].price + '\t\t');
+  }
 
 
+//===============================================================
 
-////////// 
-
-connection.query('SELECT ItemID, ProductName, Price FROM Bamazon.products', function(err, rows, fields) {
-  if (err) throw err;
- console.log(rows);
+  console.log("\nWhich one would you like to buy?\nPlease enter the Item ID and quantity");
+  prompt.start();
+  prompt.get(['ItemID', 'StockQuantity'], function(err, choice){
+    var userID = choice.ItemID;
+    var userQuantity = choice.StockQuantity;
+    prompt.stop();
+    connection.query('SELECT * FROM products WHERE itemID = "' + userID + '"', function(err, product){
+      if(product[0].StockQuantity >= userQuantity) {
+        var remainder = product[0].StockQuantity - userQuantity;
+        connection.query('UPDATE products SET StockQuantity = "' + remainder + '" WHERE ItemID = "' + userID + '"', function(err, result){
+          if(err) throw err;
+        });
+        console.log('You ordered ' + userQuantity + " " + product[0].ProductName);
+      console.log('Your total is: $' + product[0].Price * userQuantity + '\nThank you for shopping!');
+      connection.end();
+    }
+      else
+      {
+        console.log("Sorry, Currently this item is out of stock...");
+        connection.end();
+      }
+    });
+  });
 });
 
 
-//////////
 
-var inquirer = require("inquirer");
 
-var questions = [
-{
-  type: "input",
-  name: "ItemID",
-  message: "Which product do you want? enter by ItemID",
-  validate: function(value) {
-    var pass = value.match(/^\d{2}/);
-    if (pass) {
-      return true;
-
-    } else {
-      return "Please enter your favorite product by ID";
-    }
-  }
-}
-];
-
-var questions = [
-{
-  type: "input",
-  name: "ItemID",
-  message: "How many product do you want?",
-  validate: function(value) {
-    var pass = value.match(/^\d{2}/);
-    if (pass) {
-      return true;
-
-    } else {
-      return "Please enter ";
-    }
-  }
-}
-];
-
-inquirer.prompt(questions, function(answers) {
-  console.log( JSON.stringify(answers, null, "  ") );
-});
- 
-connection.end();
